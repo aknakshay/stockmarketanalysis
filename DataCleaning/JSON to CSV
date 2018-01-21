@@ -1,1 +1,31 @@
 
+import json
+import os
+
+present_dir = 'C:\\Users\\Desktop\\NASADAQ\\'
+flist = []
+
+#To create a directory and file inside that directory
+for root,dir,files in os.walk(present_dir): 
+	for d in dir:
+		for root,dir,files in os.walk(present_dir+d+'\\'):
+			for f in files:
+				flist.append(d+'\\'+f)
+
+'''checks for the existing json file and if present then create a new csv file'''
+for filename in flist:
+        '''checks if the output directory is present or not''' 
+        if(os.path.isdir(present_dir + 'output') == False):
+                os.mkdir(present_dir + 'output')       
+        with open (present_dir+filename, 'r+') as f:
+                data = json.load(f)
+                path = present_dir+'output\\'+ filename[11:]+'.csv'
+                
+                with open(path,'a+') as f:
+                        for timestamp in data:
+                                str = timestamp
+                                for value in data[timestamp]:
+                                        str = str + ',' + (data[timestamp][value])
+                                str = str + '\n'
+                                f.write(str)
+ 
