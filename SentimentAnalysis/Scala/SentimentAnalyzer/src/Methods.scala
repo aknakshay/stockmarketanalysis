@@ -14,9 +14,17 @@ import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations.SentimentAnnotatedTree
 
 class Methods {
+  
+  // creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and coreference resolution
+  val props = new Properties()
+  props.setProperty("annotators", "tokenize,ssplit,pos,parse,sentiment")
+  val pipeline = new StanfordCoreNLP(props)
+  
+  // Language Tool 
+  val langTool = new JLanguageTool(new AmericanEnglish())
+
 
   def SpellCheck(text: String): String = {
-    val langTool = new JLanguageTool(new AmericanEnglish())
 
     val query = text
 
@@ -47,12 +55,6 @@ class Methods {
 
   
     def Sentiments(checkedText: String): Double = {
-    
-    // creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and coreference resolution
-    val props = new Properties()
-    props.setProperty("annotators", "tokenize,ssplit,pos,parse,sentiment")
-    val pipeline = new StanfordCoreNLP(props)
-
     
     // read some text in the text variable
     val text = checkedText
