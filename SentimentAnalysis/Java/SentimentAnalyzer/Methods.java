@@ -154,7 +154,9 @@ public class Methods {
 		Dataset<Row> result = data
 				.map(t -> Tuple2.apply(t.getAs("id").toString(), GetSentiment(SpellCheck(t.getAs("text").toString()))),
 						encoder1)
-				.toDF("_id", "Sentiment").persist();
+				.toDF("_id", "Sentiment");
+		
+		result.persist();
 
 		result.show();
 		
