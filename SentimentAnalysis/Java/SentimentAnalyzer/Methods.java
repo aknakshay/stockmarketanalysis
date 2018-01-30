@@ -43,9 +43,14 @@ public class Methods {
 	static StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 
 	static JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
+	
+	
 
 	public static String SpellCheck(String text) {
 
+
+//		String clean = text.replaceAll("\\P{Print}", "");
+		
 		String query = text;
 
 		try {
@@ -103,6 +108,8 @@ public class Methods {
 		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
 
 		Double sum = 0.0;
+		
+	
 
 		for (CoreMap sentence : sentences) {
 
@@ -144,18 +151,19 @@ public class Methods {
 
 		Encoder<Tuple2<String, Double>> encoder1 = Encoders.tuple(Encoders.STRING(), Encoders.DOUBLE());
 
-		Dataset<Row> result = data.map(
-				t -> Tuple2.apply(t.getAs("id").toString(), GetSentiment(SpellCheck(t.getAs("text").toString()))),
-				encoder1).toDF("id","Sentiment");
+		Dataset<Row> result = data
+				.map(t -> Tuple2.apply(t.getAs("id").toString(), GetSentiment(SpellCheck(t.getAs("text").toString()))),
+						encoder1)
+				.toDF("_id", "Sentiment").persist();
 
+		result.show();
 		
-	//	Dataset<Row> resultComp = data.join(result, data.col("id").equalTo(result.col("id")));
-		
-		Dataset<Row> resultComp = data.join(result);
-		
+		// Dataset<Row> resultComp = data.join(result,
+		// data.col("id").equalTo(result.col("id")));
+		Dataset<Row> resultComp = data.join(result, data.col("id").equalTo(result.col("_id")));
+		resultComp.head();
 		resultComp.createOrReplaceTempView("twitter");
-		spark.sql("describe twitter").show();
-		
+		spark.sql("select id,sentiment from twitter").show();
 
 	}
 
