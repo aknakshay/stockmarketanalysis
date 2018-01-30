@@ -140,16 +140,22 @@ public class Methods {
 		 * data.createOrReplaceTempView("twitter");
 		 * spark.sql("describe twitter").show();
 		 */
+		// Column result = data.col("text").equalTo((String) t -> getSentiment(t));
 
 		Encoder<Tuple2<String, Double>> encoder1 = Encoders.tuple(Encoders.STRING(), Encoders.DOUBLE());
 
-		Dataset<Tuple2<String, Double>> result = data.map(
+		Dataset<Row> result = data.map(
 				t -> Tuple2.apply(t.getAs("id").toString(), GetSentiment(SpellCheck(t.getAs("text").toString()))),
-				encoder1);
+				encoder1).toDF("id","Sentiment");
 
-		result.toDF("id", "Sentiment");
-
-		data.join(result, data.col("id").equalTo(data.col("id"))).show();
+		
+	//	Dataset<Row> resultComp = data.join(result, data.col("id").equalTo(result.col("id")));
+		
+		Dataset<Row> resultComp = data.join(result);
+		
+		resultComp.createOrReplaceTempView("twitter");
+		spark.sql("describe twitter").show();
+		
 
 	}
 
