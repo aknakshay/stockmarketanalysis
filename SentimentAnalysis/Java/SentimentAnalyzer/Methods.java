@@ -16,15 +16,22 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.Pair;
+import scala.Tuple2;
 
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.javatuples.Tuple;
 import org.apache.spark.sql.AnalysisException;
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.api.java.function.MapFunction;
-import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Encoder;
+
+import org.apache.spark.sql.functions.*;
 
 public class Methods {
 
@@ -129,28 +136,20 @@ public class Methods {
 		Dataset<Row> data = spark.read()
 				.json("/home/nikita/Documents/backupHDFS/day_key=20180119/FlumeData.1516317891260");
 
-		data.createGlobalTempView("twitter");
-
-		Dataset<Row> tweet_text = spark.sql("SELECT * FROM global_temp.twitter");
-
-		Dataset<Double> senti = tweet_text.map(
-				(MapFunction<Row, Double>) text -> GetSentiment(SpellCheck(text.getAs("text").toString())),
-				Encoders.DOUBLE());
-
-		
-		/*data.withColumn("Sentiments", RowFactory.create(senti));
-		tweet_text.join(senti);*/
-		
-		
-
-		//tweet_text.withColumn("senti", senti);
-
-		// data.withColumn("Sentiments", senti);
-
 		/*
-		 * tweet_text.join(tweet_text, tweet_text.map((MapFunction<Row, Double>) text ->
-		 * GetSentiment(SpellCheck(text.toString())), Encoders.DOUBLE()));
+		 * data.createOrReplaceTempView("twitter");
+		 * spark.sql("describe twitter").show();
 		 */
+
+		Encoder<Tuple2<String, Double>> encoder1 = Encoders.tuple(Encoders.STRING(), Encoders.DOUBLE());
+
+		Dataset<Tuple2<String, Double>> result = data.map(
+				t -> Tuple2.apply(t.getAs("id").toString(), GetSentiment(SpellCheck(t.getAs("text").toString()))),
+				encoder1);
+
+		result.toDF("id", "Sentiment");
+
+		data.join(result, data.col("id").equalTo(data.col("id"))).show();
 
 	}
 
