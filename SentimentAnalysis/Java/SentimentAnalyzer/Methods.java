@@ -1,4 +1,4 @@
-package com.app.core;
+package org.cdac.sentimentAnalyzer2;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +18,9 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.AnalysisException;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -70,8 +72,6 @@ public class Methods {
 			return result;
 
 		} catch (Exception e) {
-
-			System.out.print("Exception for " + e.getStackTrace());
 			return text;
 		}
 
@@ -89,7 +89,6 @@ public class Methods {
 
 		// read some text in the text variable
 		String text = checkedText;
-
 		// create an empty Annotation just with the given text
 		Annotation document = new Annotation(text);
 
@@ -119,6 +118,8 @@ public class Methods {
 
 		Double total = sum / sentences.size();
 
+		System.out.println("Checking for tweet : " + checkedText);
+		System.out.println("Sentiment Value : " + total);
 		return total;
 	}
 
@@ -129,15 +130,17 @@ public class Methods {
 			System.exit(-1);
 		}
 
-		SparkSession spark = SparkSession.builder().appName("Sentiment Analyzer").master("local[*]").getOrCreate();
+		 //SparkSession spark = SparkSession.builder().appName("Sentiment Analyzer").master("local[*]").getOrCreate();
+		SparkSession spark = SparkSession.builder().appName("Sentiment Analyzer").getOrCreate();
 
 		//Setting recursive properties to read files from subdirectories as well
 		spark.sparkContext().hadoopConfiguration().get("mapreduce.input.fileinputformat.input.dir.recursive");
 		spark.sparkContext().hadoopConfiguration().set("mapreduce.input.fileinputformat.input.dir.recursive", "true");
 
-		//input address
-		Dataset<Row> data = spark.read().json(args[0]);
-
+		//input address 
+		String path = args[0] + "/*/*";
+		
+		Dataset<Row> data = spark.read().json(path);
 	
 		
 		//Ignore
@@ -153,7 +156,7 @@ public class Methods {
 		data.createOrReplaceTempView("structure");
 
 		// Gets the sentiment values as well, along with desired format of timestamp and partitionBy field(date)
-		Dataset<Row> withSentiments = spark.sql("select concat(substr(created_at,5,6), substr(created_at,26,5),' ',substr(created_at,12,6),'00') as timestamp,Sentiment(text) as Sentiments,* ,SUBSTR(created_at,5,6) as partitionBy from structure limit 100");
+		Dataset<Row> withSentiments = spark.sql("select concat(substr(created_at,5,6), substr(created_at,26,5),' ',substr(created_at,12,6),'00') as timestamp,Sentiment(text) as Sentiments,* ,SUBSTR(created_at,5,6) as partitionBy from structure");
 		
 		//Creates a view named twitter
 		withSentiments.createOrReplaceTempView("twitter");
@@ -161,21 +164,29 @@ public class Methods {
 		
 		//gets the net feeling. Net feeling formula currently is followers_count * sentiments but also try with
 		//square root of followers_count * sentiments
-		Dataset<Row> net = spark.sql("select *,lower(text) as main_text,user.followers_count * Sentiments as netSentiment from twitter");
+		Dataset<Row> net = spark.sql("select *,lower(text) as main_text,SQRT(user.followers_count) * Sentiments as netSentiment from twitter");
 
-		net.filter(col("main_text").contains("apple")).groupBy("timestamp","partitionBy").mean("netSentiment").
-		map(
-			    (MapFunction<Row, Double>) a -> a.getAs("avg(netSentiment)"),
-			    Encoders.DOUBLE());
+
+		//Creating a final view to save the data
+		net.createOrReplaceTempView("final");
 		
+		//List of companies to output data for
 		List<String> list = Arrays.asList("apple", "google", "tesla", "infosys", "tcs", "oracle", "microsoft", "facebook");
-/*		
+
+		String query;
+		String oPath;
+		Dataset<Row> result;
+		//Filter and save the data
 		for(String company : list ) {
-			String path = args[1] + company;
-			//Get's the mean of netSentiment per minute for each company
-			net.filter(col("main_text").contains(company)).groupBy("timestamp","partitionBy").mean("netSentiment").write().partitionBy("partitionBy").format("json").save(path);	
+			oPath = args[1] + "/" + company;
+			
+			query = "select timestamp,AVG(netSentiment) as feeling from final where main_text regexp '(" + company + ")' group by timestamp";
+			result = spark.sql(query);
+			//result.write().format("json").save(oPath);
+			result.write().json(oPath);
+
 		}
-*/
+
 		
 	}
 
