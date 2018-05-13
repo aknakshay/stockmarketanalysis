@@ -8,7 +8,7 @@ import org.languagetool.rules.RuleMatch;
 
 public class LanguageCheck {
 	
-	static JLanguageTool langTool = (new JLanguageTool(new AmericanEnglish()));
+	static JLanguageTool langTool = new JLanguageTool(new AmericanEnglish());
 
     public static String CorrectSpell(String text) {
  	
