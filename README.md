@@ -3,9 +3,9 @@ Using the power of Big Data Tools to analyze Stock Market
 
 Stocks selected: 
 
-  NASDAQ: GOOGL,MSFT,ORCL,FB,AAPL,TSLA
+  **NASDAQ**: GOOGL,MSFT,ORCL,FB,AAPL,TSLA
   
-  NSE: TCS,INFY
+  **NSE**: TCS,INFY
 
 ## Data Retrieval
 ###       Stock Prices
@@ -17,6 +17,9 @@ For NSE, a scraper is written in Python which scrapes the latest prices for each
 However the problem faced here was that at certain 1 or 2 minute interval, price won't get updated on the NSE website. For the same, data interpolation is done. 
 
 ###       Twitter Data
+
+Collected Twitter Data using Python with Twitter API. Read in Detail [here](https://www.cloudsigma.com/twitter-data-analysis-using-python/).
+
 
 https://www.cloudsigma.com/realtime-twitter-data-ingestion-using-flume/
 
