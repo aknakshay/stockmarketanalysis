@@ -11,7 +11,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<flume.version>1.4.0-cdh4.5.0</flume.version>
-		<hadoop.version>2.0.0-cdh4.5.0</hadoop.version>
+		<hadoop.version>3.2.3</hadoop.version>
 	</properties>
 
 	<dependencies>
